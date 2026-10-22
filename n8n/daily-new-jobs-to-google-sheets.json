@@ -1,24 +1,130 @@
 {
-  "name": "Daily new jobs from 17,500 company career sites to Google Sheets (Apify Job Postings API)",
+  "name": "Get new job postings from 17,000+ company career sites into Google Sheets every day",
   "nodes": [
+    {
+      "parameters": {
+        "content": "## Get new job postings from 17,000+ company career sites into Google Sheets every day\n\nEvery morning this workflow pulls only the jobs posted since the last run that match your job titles and locations, straight from employers' own career sites (Greenhouse, Lever, Ashby, Workday, SmartRecruiters, Workable and more), and appends them to a Google Sheet. No LinkedIn or Indeed scraping, no reposts, no logins.\n\n**Who it's for:** job seekers running a targeted search, recruiters tracking a role family, niche job boards.\n\n### How it works\n1. **Schedule Trigger** runs every day at 8:00.\n2. **Set your job search** holds the titles, locations and limits you edit.\n3. **HTTP Request** calls the Apify *Job Postings API* Actor (`cleanrowdata/fresh-jobs-index`) with `onlyNewSinceLastRun`, so each run returns (and bills) only jobs you have not seen.\n4. **Keep sheet columns** keeps 7 fields and **Google Sheets** appends one row per job. If there are no new jobs, nothing is written.\n\n### Setup\n1. Create a free [Apify](https://apify.com) account and copy your API token (Settings > API & Integrations).\n2. In the HTTP Request node create a **Header Auth** credential: Name `Authorization`, Value `Bearer YOUR_APIFY_TOKEN`.\n3. Edit **Set your job search** (comma-separated lists). Adding `Remote` to locations also matches remote jobs in other countries.\n4. Create a Google Sheet with headers `posted_at, company, title, location, salary_text, ats, job_url`, connect Google Sheets and select the sheet.\n\n### Requirements\nApify account (pay per job: $2.50 per 1,000 on the free plan, which includes $5/month of credit), Google Sheets.\n\n### Customization\nAdd filters to the JSON body (`minSalaryUsd`, `seniority`, `remoteOnly`, `companies`), or swap Google Sheets for Slack, Notion, Airtable or email.",
+        "height": 820,
+        "width": 560,
+        "color": 1
+      },
+      "id": "c4a74c5b-216d-57f8-a54c-b727b6994987",
+      "name": "Overview",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -640,
+        -260
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 1. Schedule and search settings\nEdit the job titles and locations (comma-separated) here.",
+        "height": 400,
+        "width": 460,
+        "color": 7
+      },
+      "id": "cc19eee5-1e8c-559c-9687-86147434d8ab",
+      "name": "Section: schedule and search",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        -140
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 2. Fetch new jobs from Apify\nAttach your Apify Header Auth credential.",
+        "height": 400,
+        "width": 260,
+        "color": 7
+      },
+      "id": "12898ffa-fb2a-54ff-8194-915b3e82294c",
+      "name": "Section: fetch jobs",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        440,
+        -140
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 3. Append rows to Google Sheets",
+        "height": 400,
+        "width": 460,
+        "color": 7
+      },
+      "id": "7cf34d25-930b-511e-a673-cce6e9e32878",
+      "name": "Section: write to sheet",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        720,
+        -140
+      ]
+    },
     {
       "parameters": {
         "rule": {
           "interval": [
             {
               "field": "days",
-              "triggerAtHour": 8
+              "triggerAtHour": 8,
+              "triggerAtMinute": 0
             }
           ]
         }
       },
-      "id": "a1b2c3d4-0001-4000-8000-000000000001",
+      "id": "5f0a2727-6356-5198-8b1a-7c88a3721943",
       "name": "Every day at 8:00",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
       "position": [
         0,
-        0
+        60
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f790a3c4-c7e6-5923-9bc9-9098533c7d9d",
+              "name": "job_titles",
+              "value": "marketing manager, growth marketing",
+              "type": "string"
+            },
+            {
+              "id": "eac46f1b-1117-5007-af8d-fe819dc9d042",
+              "name": "locations",
+              "value": "United States",
+              "type": "string"
+            },
+            {
+              "id": "5ba6abee-9444-5351-a87a-73963f66259b",
+              "name": "max_jobs_per_run",
+              "value": 200,
+              "type": "number"
+            },
+            {
+              "id": "f873ba90-8e40-5831-838c-b1bed4dfb704",
+              "name": "saved_search_name",
+              "value": "n8n-daily-jobs-sheet",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d9eb7a82-4746-57f8-8990-d62797417198",
+      "name": "Set your job search",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        60
       ]
     },
     {
@@ -29,63 +135,67 @@
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "{\n  \"timeRange\": \"7d\",\n  \"titleSearch\": [\n    \"marketing manager\"\n  ],\n  \"locationSearch\": [\n    \"United States\",\n    \"Remote\"\n  ],\n  \"onlyNewSinceLastRun\": true,\n  \"stateKey\": \"n8n-daily-sheet\",\n  \"includeDescription\": false,\n  \"limit\": 200\n}",
+        "jsonBody": "={{ JSON.stringify({\n  timeRange: '7d',\n  titleSearch: $json.job_titles.split(',').map(s => s.trim()).filter(Boolean),\n  locationSearch: $json.locations.split(',').map(s => s.trim()).filter(Boolean),\n  onlyNewSinceLastRun: true,\n  stateKey: $json.saved_search_name,\n  includeDescription: false,\n  limit: $json.max_jobs_per_run\n}) }}",
         "options": {
           "timeout": 300000
         }
       },
-      "id": "a1b2c3d4-0002-4000-8000-000000000002",
-      "name": "Get new jobs from Apify",
+      "id": "1a6dbb90-bb5b-5876-a7e8-b831a7b0097d",
+      "name": "Get new jobs from Apify Job Postings API",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        240,
-        0
+        500,
+        60
       ],
-      "notes": "Credential: Header Auth, name = Authorization, value = Bearer <your Apify API token>"
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000,
+      "notes": "Header Auth: Authorization = Bearer <your Apify token>",
+      "notesInFlow": true
     },
     {
       "parameters": {
         "assignments": {
           "assignments": [
             {
-              "id": "f0",
+              "id": "2a7f3ed3-3ece-5732-b26a-ee053b1248fa",
               "name": "posted_at",
-              "value": "={{ $json.posted_at }}",
+              "value": "={{ $json.posted_at ?? $json.first_seen }}",
               "type": "string"
             },
             {
-              "id": "f1",
+              "id": "c11b11eb-e8a0-5699-87a7-ee2f77ff940f",
               "name": "company",
               "value": "={{ $json.company }}",
               "type": "string"
             },
             {
-              "id": "f2",
+              "id": "e8960ae3-c819-50f0-9c0d-bc334ce91a58",
               "name": "title",
               "value": "={{ $json.title }}",
               "type": "string"
             },
             {
-              "id": "f3",
+              "id": "c9affdb8-24dc-5044-8c35-9221479f4ad6",
               "name": "location",
-              "value": "={{ $json.location }}",
+              "value": "={{ $json.location ?? '' }}",
               "type": "string"
             },
             {
-              "id": "f4",
+              "id": "f06aa236-a138-5ac6-b5a1-d7fedc5e4ceb",
               "name": "salary_text",
-              "value": "={{ $json.salary_text }}",
+              "value": "={{ $json.salary_text ?? '' }}",
               "type": "string"
             },
             {
-              "id": "f5",
+              "id": "83ea9b18-9a68-5960-b9af-49d8c8ca2d5b",
               "name": "ats",
               "value": "={{ $json.ats }}",
               "type": "string"
             },
             {
-              "id": "f6",
+              "id": "16aa7964-8733-521e-a309-7bff36b7f0ce",
               "name": "job_url",
               "value": "={{ $json.job_url }}",
               "type": "string"
@@ -94,13 +204,13 @@
         },
         "options": {}
       },
-      "id": "a1b2c3d4-0003-4000-8000-000000000003",
-      "name": "Pick columns",
+      "id": "357c0c56-7750-505c-bb9e-8ad90ce18e46",
+      "name": "Keep sheet columns",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        480,
-        0
+        780,
+        60
       ]
     },
     {
@@ -118,19 +228,22 @@
         },
         "columns": {
           "mappingMode": "autoMapInputData",
-          "value": {}
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
         },
         "options": {}
       },
-      "id": "a1b2c3d4-0004-4000-8000-000000000004",
-      "name": "Append to Google Sheet",
+      "id": "900b1a3e-bd2d-563e-a954-c86af5d90282",
+      "name": "Append jobs to Google Sheet",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
       "position": [
-        720,
-        0
+        1000,
+        60
       ],
-      "notes": "Create a sheet with headers: posted_at, company, title, location, salary_text, ats, job_url. Paste its URL here."
+      "notes": "Select your sheet (7 headers, see overview)",
+      "notesInFlow": true
     }
   ],
   "connections": {
@@ -138,29 +251,40 @@
       "main": [
         [
           {
-            "node": "Get new jobs from Apify",
+            "node": "Set your job search",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Get new jobs from Apify": {
+    "Set your job search": {
       "main": [
         [
           {
-            "node": "Pick columns",
+            "node": "Get new jobs from Apify Job Postings API",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Pick columns": {
+    "Get new jobs from Apify Job Postings API": {
       "main": [
         [
           {
-            "node": "Append to Google Sheet",
+            "node": "Keep sheet columns",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Keep sheet columns": {
+      "main": [
+        [
+          {
+            "node": "Append jobs to Google Sheet",
             "type": "main",
             "index": 0
           }
@@ -168,6 +292,7 @@
       ]
     }
   },
+  "pinData": {},
   "settings": {
     "executionOrder": "v1"
   },

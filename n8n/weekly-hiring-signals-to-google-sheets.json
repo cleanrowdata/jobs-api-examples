@@ -1,6 +1,70 @@
 {
-  "name": "Weekly companies hiring for a function to Google Sheets (Apify Hiring Signals API)",
+  "name": "Find companies hiring for sales (or any team) every week and log them as leads in Google Sheets",
   "nodes": [
+    {
+      "parameters": {
+        "content": "## Find companies hiring for sales (or any team) every week and log them as leads in Google Sheets\n\nA company that opens several sales roles in a week is growing its sales team, a buying signal for sales tools, recruiters and agencies. Every Monday this workflow asks the Apify *Hiring Signals API* for companies with at least N new jobs in a function over the past 7 days, using data from 17,000+ company career sites, and appends one row per company to Google Sheets.\n\n**Who it's for:** SDRs and founders building outbound lists, recruiting agencies, investors tracking hiring momentum.\n\n### How it works\n1. **Schedule Trigger** runs every Monday at 8:00.\n2. **Set your lead criteria** holds the job function, locations and thresholds you edit.\n3. **HTTP Request** calls `cleanrowdata/hiring-signals-api` with `onlyNewSinceLastRun`, so each week brings only companies you have not seen before.\n4. **Keep sheet columns** builds one lead row (company, careers page, signal strength, new-job count, sample job links) and **Google Sheets** appends it.\n\n### Setup\n1. Create a free [Apify](https://apify.com) account and copy your API token (Settings > API & Integrations).\n2. In the HTTP Request node create a **Header Auth** credential: Name `Authorization`, Value `Bearer YOUR_APIFY_TOKEN`.\n3. Edit **Set your lead criteria**. Functions: sales, security, ai_ml, data, customer_success, engineering, product, design, marketing, finance, people_hr, legal, healthcare, operations.\n4. Create a Google Sheet with headers `company, careers_url, ats, signal_strength, new_jobs, top_function, latest_new_job_at, sample_job_titles, sample_job_links`, connect Google Sheets and select it.\n\n### Requirements\nApify account (pay per company row: $5 per 1,000; the free plan includes $5/month of credit), Google Sheets.\n\n### Customization\nSend rows to HubSpot or Clay, or enrich each company with an email-finder node.",
+        "height": 880,
+        "width": 560,
+        "color": 1
+      },
+      "id": "c4a74c5b-216d-57f8-a54c-b727b6994987",
+      "name": "Overview",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -640,
+        -300
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 1. Schedule and lead criteria\nEdit the function, locations and minimum new jobs here.",
+        "height": 400,
+        "width": 460,
+        "color": 7
+      },
+      "id": "c6bd9f4e-e60c-54e1-adff-e9bc080f5af6",
+      "name": "Section: schedule and criteria",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        -140
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 2. Fetch hiring companies from Apify\nAttach your Apify Header Auth credential.",
+        "height": 400,
+        "width": 260,
+        "color": 7
+      },
+      "id": "2bfa063b-3ccd-5732-8a5e-63683c65dcc7",
+      "name": "Section: fetch companies",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        440,
+        -140
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 3. Append leads to Google Sheets",
+        "height": 400,
+        "width": 460,
+        "color": 7
+      },
+      "id": "7cf34d25-930b-511e-a673-cce6e9e32878",
+      "name": "Section: write to sheet",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        720,
+        -140
+      ]
+    },
     {
       "parameters": {
         "rule": {
@@ -10,18 +74,66 @@
               "triggerAtDay": [
                 1
               ],
-              "triggerAtHour": 8
+              "triggerAtHour": 8,
+              "triggerAtMinute": 0
             }
           ]
         }
       },
-      "id": "a1b2c3d4-0001-4000-8000-000000000001",
+      "id": "4588a143-147d-534f-9497-21e4e7155a96",
       "name": "Every Monday at 8:00",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
       "position": [
         0,
-        0
+        60
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7d7de4e9-2496-5021-ba25-09766f147737",
+              "name": "job_functions",
+              "value": "sales",
+              "type": "string"
+            },
+            {
+              "id": "c0d9c02c-7b19-50f3-afd4-15b7f021f3eb",
+              "name": "locations",
+              "value": "United States",
+              "type": "string"
+            },
+            {
+              "id": "a4e5b7e5-398a-5bb1-a465-ebc08a1dac6f",
+              "name": "min_new_jobs",
+              "value": 3,
+              "type": "number"
+            },
+            {
+              "id": "90b459ef-879e-5b6e-89f0-1b3dc7b91971",
+              "name": "max_companies_per_run",
+              "value": 100,
+              "type": "number"
+            },
+            {
+              "id": "77b1b5ba-69a3-53f4-b6ac-f81e5e9fed6f",
+              "name": "saved_search_name",
+              "value": "n8n-weekly-hiring-signals",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "2a59da5e-53d9-578d-b3ee-fce321a2c548",
+      "name": "Set your lead criteria",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        60
       ]
     },
     {
@@ -32,66 +144,94 @@
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "{\n  \"timeRange\": \"7d\",\n  \"jobFunctions\": [\n    \"sales\"\n  ],\n  \"locationSearch\": [\n    \"United States\"\n  ],\n  \"minNewJobs\": 3,\n  \"onlyNewSinceLastRun\": true,\n  \"stateKey\": \"n8n-hiring-signals\",\n  \"limit\": 100\n}",
+        "jsonBody": "={{ JSON.stringify({\n  timeRange: '7d',\n  jobFunctions: $json.job_functions.split(',').map(s => s.trim()).filter(Boolean),\n  locationSearch: $json.locations.split(',').map(s => s.trim()).filter(Boolean),\n  minNewJobs: $json.min_new_jobs,\n  onlyNewSinceLastRun: true,\n  stateKey: $json.saved_search_name,\n  limit: $json.max_companies_per_run\n}) }}",
         "options": {
           "timeout": 300000
         }
       },
-      "id": "a1b2c3d4-0002-4000-8000-000000000002",
-      "name": "Get new jobs from Apify",
+      "id": "5fda06e0-f619-5364-9a61-c5dd4da1be40",
+      "name": "Get hiring companies from Apify Hiring Signals API",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        240,
-        0
+        500,
+        60
       ],
-      "notes": "Credential: Header Auth, name = Authorization, value = Bearer <your Apify API token>"
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000,
+      "notes": "Header Auth: Authorization = Bearer <your Apify token>",
+      "notesInFlow": true
     },
     {
       "parameters": {
         "assignments": {
           "assignments": [
             {
-              "id": "f0",
+              "id": "c11b11eb-e8a0-5699-87a7-ee2f77ff940f",
               "name": "company",
               "value": "={{ $json.company }}",
               "type": "string"
             },
             {
-              "id": "f1",
-              "name": "company_domain",
-              "value": "={{ $json.company_domain }}",
+              "id": "1dde9b9c-fdeb-5b3e-bbad-ee2794aa62a0",
+              "name": "careers_url",
+              "value": "={{ $json.careers_url ?? '' }}",
               "type": "string"
             },
             {
-              "id": "f2",
+              "id": "83ea9b18-9a68-5960-b9af-49d8c8ca2d5b",
               "name": "ats",
               "value": "={{ $json.ats }}",
               "type": "string"
             },
             {
-              "id": "f3",
-              "name": "new_jobs",
-              "value": "={{ $json.new_jobs }}",
+              "id": "6490002d-5d48-5027-9f28-1ac05e3ed8d1",
+              "name": "signal_strength",
+              "value": "={{ $json.signal_strength }}",
               "type": "string"
             },
             {
-              "id": "f4",
-              "name": "open_jobs_matching",
-              "value": "={{ $json.open_jobs_matching }}",
+              "id": "14afaed5-8d63-5792-abad-8c718789c177",
+              "name": "new_jobs",
+              "value": "={{ $json.new_jobs }}",
+              "type": "number"
+            },
+            {
+              "id": "6806a12c-d73c-5767-9ef9-1403b28261ee",
+              "name": "top_function",
+              "value": "={{ $json.top_function }}",
+              "type": "string"
+            },
+            {
+              "id": "4ed6477a-897d-51e8-8a50-19c34c9de8af",
+              "name": "latest_new_job_at",
+              "value": "={{ $json.latest_new_job_at ?? '' }}",
+              "type": "string"
+            },
+            {
+              "id": "82fb0206-ad77-5526-b143-5883e0c43e33",
+              "name": "sample_job_titles",
+              "value": "={{ ($json.sample_jobs || []).map(j => j.title).join('\\n') }}",
+              "type": "string"
+            },
+            {
+              "id": "5c4b845c-b112-58a8-b420-221804daccca",
+              "name": "sample_job_links",
+              "value": "={{ ($json.sample_jobs || []).map(j => j.job_url).join('\\n') }}",
               "type": "string"
             }
           ]
         },
         "options": {}
       },
-      "id": "a1b2c3d4-0003-4000-8000-000000000003",
-      "name": "Pick columns",
+      "id": "357c0c56-7750-505c-bb9e-8ad90ce18e46",
+      "name": "Keep sheet columns",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        480,
-        0
+        780,
+        60
       ]
     },
     {
@@ -109,19 +249,22 @@
         },
         "columns": {
           "mappingMode": "autoMapInputData",
-          "value": {}
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
         },
         "options": {}
       },
-      "id": "a1b2c3d4-0004-4000-8000-000000000004",
-      "name": "Append to Google Sheet",
+      "id": "7b216a84-4c97-56d4-a77f-604e8946b4d8",
+      "name": "Append leads to Google Sheet",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
       "position": [
-        720,
-        0
+        1000,
+        60
       ],
-      "notes": "Create a sheet with headers: company, company_domain, ats, new_jobs, open_jobs_matching. Paste its URL here."
+      "notes": "Select your sheet (9 headers, see overview)",
+      "notesInFlow": true
     }
   ],
   "connections": {
@@ -129,29 +272,40 @@
       "main": [
         [
           {
-            "node": "Get new jobs from Apify",
+            "node": "Set your lead criteria",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Get new jobs from Apify": {
+    "Set your lead criteria": {
       "main": [
         [
           {
-            "node": "Pick columns",
+            "node": "Get hiring companies from Apify Hiring Signals API",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Pick columns": {
+    "Get hiring companies from Apify Hiring Signals API": {
       "main": [
         [
           {
-            "node": "Append to Google Sheet",
+            "node": "Keep sheet columns",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Keep sheet columns": {
+      "main": [
+        [
+          {
+            "node": "Append leads to Google Sheet",
             "type": "main",
             "index": 0
           }
@@ -159,6 +313,7 @@
       ]
     }
   },
+  "pinData": {},
   "settings": {
     "executionOrder": "v1"
   },
